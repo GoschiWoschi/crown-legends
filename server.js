@@ -1,126 +1,182 @@
 //  OpenShift sample Node application
 var express = require('express'),
-    app     = express(),
-    morgan  = require('morgan');
-    
-Object.assign=require('object-assign')
+    compress = require('compression'),
+    sdk = require("playfab-sdk"),
+    bodyParser = require('body-parser'),
+    PlayFab = sdk.PlayFab;
 
-app.engine('html', require('ejs').renderFile);
-app.use(morgan('combined'))
+var PlayFabClient = sdk.PlayFabClient;
+var PlayFabServer = sdk.PlayFabServer;
+var app = express();
+app.use(compress());
+app.use(bodyParser.json({limit: '100mb'}));
+app.use(bodyParser.urlencoded({ extended: false }));
+
+PlayFab.settings.titleId = "40FFE";
+PlayFab.settings.developerSecretKey = "QTK51JZINJCXWUT6INJK5HHZAKD5AZBKSAPEGQ8HW5WZRDK4TC";
 
 var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
-    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0',
-    mongoURL = process.env.OPENSHIFT_MONGODB_DB_URL || process.env.MONGO_URL,
-    mongoURLLabel = "";
+    ip   = process.env.IP   || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
-if (mongoURL == null) {
-  var mongoHost, mongoPort, mongoDatabase, mongoPassword, mongoUser;
-  // If using plane old env vars via service discovery
-  if (process.env.DATABASE_SERVICE_NAME) {
-    var mongoServiceName = process.env.DATABASE_SERVICE_NAME.toUpperCase();
-    mongoHost = process.env[mongoServiceName + '_SERVICE_HOST'];
-    mongoPort = process.env[mongoServiceName + '_SERVICE_PORT'];
-    mongoDatabase = process.env[mongoServiceName + '_DATABASE'];
-    mongoPassword = process.env[mongoServiceName + '_PASSWORD'];
-    mongoUser = process.env[mongoServiceName + '_USER'];
 
-  // If using env vars from secret from service binding  
-  } else if (process.env.database_name) {
-    mongoDatabase = process.env.database_name;
-    mongoPassword = process.env.password;
-    mongoUser = process.env.username;
-    var mongoUriParts = process.env.uri && process.env.uri.split("//");
-    if (mongoUriParts.length == 2) {
-      mongoUriParts = mongoUriParts[1].split(":");
-      if (mongoUriParts && mongoUriParts.length == 2) {
-        mongoHost = mongoUriParts[0];
-        mongoPort = mongoUriParts[1];
-      }
-    }
-  }
 
-  if (mongoHost && mongoPort && mongoDatabase) {
-    mongoURLLabel = mongoURL = 'mongodb://';
-    if (mongoUser && mongoPassword) {
-      mongoURL += mongoUser + ':' + mongoPassword + '@';
-    }
-    // Provide UI label that excludes user id and pw
-    mongoURLLabel += mongoHost + ':' + mongoPort + '/' + mongoDatabase;
-    mongoURL += mongoHost + ':' +  mongoPort + '/' + mongoDatabase;
-  }
-}
-var db = null,
-    dbDetails = new Object();
-
-var initDb = function(callback) {
-  if (mongoURL == null) return;
-
-  var mongodb = require('mongodb');
-  if (mongodb == null) return;
-
-  mongodb.connect(mongoURL, function(err, conn) {
-    if (err) {
-      callback(err);
-      return;
-    }
-
-    db = conn;
-    dbDetails.databaseName = db.databaseName;
-    dbDetails.url = mongoURLLabel;
-    dbDetails.type = 'MongoDB';
-
-    console.log('Connected to MongoDB at: %s', mongoURL);
-  });
-};
+    /*
 
 app.get('/', function (req, res) {
-  // try to initialize the db on every request if it's not already
-  // initialized.
-  if (!db) {
-    initDb(function(err){});
-  }
-  if (db) {
-    var col = db.collection('counts');
-    // Create a document with request IP and current time of request
-    col.insert({ip: req.ip, date: Date.now()});
-    col.count(function(err, count){
-      if (err) {
-        console.log('Error running count. Message:\n'+err);
-      }
-      res.render('index.html', { pageCountMessage : count, dbInfo: dbDetails });
-    });
-  } else {
-    console.log("nobd");
-    res.render('index.html', { pageCountMessage : null});
-  }
+  res.render('index.html', { pageCountMessage : null});
 });
 
-app.get('/pagecount', function (req, res) {
-  // try to initialize the db on every request if it's not already
-  // initialized.
-  if (!db) {
-    initDb(function(err){});
-  }
-  if (db) {
-    db.collection('counts').count(function(err, count ){
-      res.send('{ pageCount: ' + count + '}');
-    });
-  } else {
-    res.send('{ pageCount: -1 }');
-  }
-});
-
-// error handling
 app.use(function(err, req, res, next){
-  console.error(err.stack);
   res.status(500).send('Something bad happened!');
 });
 
-initDb(function(err){
-  console.log('Error connecting to Mongo. Message:\n'+err);
+
+
+app.use("/api/hugo", function(req, res){
+
+  res.send(JSON.stringify({alarm:"ok"}));
+
 });
 
+*/
 app.listen(port, ip);
-console.log('Server running on http://%s:%s', ip, port);
+app.use("/api/hugo", function(req, res){
+
+  res.send(JSON.stringify({alarm:"k"}));
+
+});
+
+app.use("/api/openchest", function(req, res){
+
+  var containsLegend = false;
+  var legendToCheck = null;
+  var alreadyOwnsLegend = false;
+  var usersCharacters = null;
+  var notOwnedCharacters = [];
+  var originalUnlockResult = null;
+  var replacementCharacterIndex = null;
+  var grantedResult = null;
+  var characterToGrant = null;
+
+  PlayFabServer.AuthenticateSessionTicket({
+      SessionTicket:req.body.SessionTicket  
+  }, onAuthResult);
+
+  function onAuthResult(error, result) {
+      if(!error) {
+          PlayFabServer.UnlockContainerInstance({ContainerItemInstanceId:req.body.ItemInstanceId, PlayFabId: req.body.PlayFabId}, onUnlockResult);
+      } else console.log(error);
+  }
+
+  function onUnlockResult(error, result){
+      if(!error){
+          originalUnlockResult = result;
+          result.data.GrantedItems.forEach(function(item){
+              if(item.ItemClass == "Legend") {
+                  containsLegend = true;
+                  legendToCheck = item;
+              }
+          });
+          if(containsLegend) {
+              PlayFabServer.GetAllUsersCharacters({PlayFabId:req.body.PlayFabId}, onCharactersResult);
+          }
+      } else res.send(error.errorMessage);
+  }
+
+  function onCharactersResult(error, result){
+      if(!error){
+          usersCharacters = result.data.Characters;
+          result.data.Characters.forEach(function(character){
+              if(character.CharacterType == legendToCheck.ItemId) {
+                  alreadyOwnsLegend = true;
+              }
+          });
+          if(alreadyOwnsLegend) {
+              console.log("character already owned");
+              PlayFabServer.GetCatalogItems({}, onCatalogResult);
+          } else {
+              characterToGrant = legendToCheck;
+              GrantCharacter();
+          }
+      }
+  }
+
+  function GrantCharacter() {
+      if(characterToGrant){
+          PlayFabServer.GrantCharacterToUser({DisplayName: characterToGrant.DisplayName, CharacterType: characterToGrant.ItemId}, OnCharacterGranted);    
+      } else{
+          OnCharacterGranted();
+      }
+  }
+
+  function OnCharacterGranted(error, result) {
+      res.send(JSON.stringify(originalUnlockResult.data));
+  }
+
+  function onCatalogResult(error, result){
+      if(!error) {
+
+          var currentLegendRarity = null;
+
+          result.data.Catalog.forEach(function(item){
+              if(item.ItemId == legendToCheck.ItemId) {
+                  currentLegendRarity = JSON.parse(item.CustomData).Rarity;
+              }
+          })
+          console.log(currentLegendRarity);
+          result.data.Catalog.forEach(function(item){
+              if(item.ItemClass == "Legend" && !userOwnsCharacter(item) && JSON.parse(item.CustomData).Rarity == currentLegendRarity) {
+                  notOwnedCharacters.push(item);
+              }
+          })
+          if(notOwnedCharacters.length > 0) {
+              replacementCharacterIndex = Math.floor(Math.random() * notOwnedCharacters.length);
+              console.log("replacing with: " + notOwnedCharacters[replacementCharacterIndex].DisplayName);
+              PlayFabServer.GrantItemsToUser({PlayFabId: req.body.PlayFabId, ItemIds:[notOwnedCharacters[replacementCharacterIndex].ItemId]}, onGrantedResult)
+          } else {
+              PlayFabServer.RevokeInventoryItem({PlayFabId:req.body.PlayFabId, ItemInstanceId:legendToCheck.ItemInstanceId}, onRevokeResult);
+          }
+      }
+  }
+
+  function onGrantedResult(error, result){
+      if(!error){
+          grantedResult = result;
+          console.log("granted replacement");
+          PlayFabServer.RevokeInventoryItem({PlayFabId:req.body.PlayFabId, ItemInstanceId:legendToCheck.ItemInstanceId}, onRevokeResult);
+      } else console.log(error);
+  }
+
+  function onRevokeResult(error, result){
+      if(!error) {
+          console.log("revoked original character");
+          for(var i = 0; i < originalUnlockResult.data.GrantedItems.length; i++) {
+              if(originalUnlockResult.data.GrantedItems[i].ItemId == legendToCheck.ItemId) {
+                  originalUnlockResult.data.GrantedItems.splice(i, 1);
+                  break;
+              }
+          }
+          if(grantedResult) {
+              characterToGrant = grantedResult.data.ItemGrantResults[0];
+              originalUnlockResult.data.GrantedItems.push(grantedResult.data.ItemGrantResults[0]);
+          }
+          GrantCharacter();
+      }
+  }
+
+  function userOwnsCharacter(character) {
+      for(var i = 0; i < usersCharacters.length; i++) {
+          if(usersCharacters[i].CharacterType == character.ItemId) return true;
+      }
+      return false;
+  }
+
+});
+
+
+
+
+
+
 
 module.exports = app ;

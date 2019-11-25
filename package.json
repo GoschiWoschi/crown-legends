@@ -11,7 +11,10 @@
     "mocha": "^2.4.5",
     "mongodb": "^2.1.16",
     "morgan": "^1.7.0",
-    "object-assign": "4.1.0"
+    "object-assign": "4.1.0",
+    "body-parser": "^1.16.0",
+    "compression": "^1.6.2",
+    "playfab-sdk": "^2.38.191029"
   },
   "engine": {
     "node": "*",
