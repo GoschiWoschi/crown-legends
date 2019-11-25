@@ -90,6 +90,7 @@ app.get('/', function (req, res) {
       res.render('index.html', { pageCountMessage : count, dbInfo: dbDetails });
     });
   } else {
+    console.log("nobd");
     res.render('index.html', { pageCountMessage : null});
   }
 });
