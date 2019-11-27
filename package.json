@@ -5,7 +5,7 @@
   "main": "server.js",
   "dependencies": {
     "express": "^4.13.4",
-    "playfab-sdk": "^2.38.191029"
+    "playfab-sdk": "^2.39.191121"
   },
   "engine": {
     "node": "*",
